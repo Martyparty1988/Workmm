@@ -1,0 +1,59 @@
+// firestore.rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Funkce pro ověření, zda je uživatel přihlášen
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Funkce pro ověření, zda dokument patří přihlášenému uživateli
+    function isOwner() {
+      return request.auth.uid == resource.data.userId;
+    }
+    
+    // Funkce pro ověření, zda data obsahují validní userId
+    function hasValidUserId() {
+      return request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Pravidla pro pracovní záznamy
+    match /workLogs/{workLog} {
+      allow read: if isSignedIn() && isOwner();
+      allow create: if isSignedIn() && hasValidUserId();
+      allow update: if isSignedIn() && isOwner() && hasValidUserId();
+      allow delete: if isSignedIn() && isOwner();
+    }
+    
+    // Pravidla pro dluhy
+    match /debts/{debt} {
+      allow read: if isSignedIn() && isOwner();
+      allow create: if isSignedIn() && hasValidUserId();
+      allow update: if isSignedIn() && isOwner() && hasValidUserId();
+      allow delete: if isSignedIn() && isOwner();
+    }
+    
+    // Pravidla pro splátky dluhů
+    match /debtPayments/{payment} {
+      allow read: if isSignedIn() && isOwner();
+      allow create: if isSignedIn() && hasValidUserId();
+      allow update: if isSignedIn() && isOwner() && hasValidUserId();
+      allow delete: if isSignedIn() && isOwner();
+    }
+    
+    // Pravidla pro historii fondu srážek
+    match /deductionsFundHistory/{record} {
+      allow read: if isSignedIn() && isOwner();
+      allow create: if isSignedIn() && hasValidUserId();
+      allow update: if isSignedIn() && isOwner() && hasValidUserId();
+      allow delete: if isSignedIn() && isOwner();
+    }
+    
+    // Pravidla pro nastavení (ID dokumentu je totožné s userId)
+    match /settings/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if false; // Nastavení nelze smazat
+    }
+  }
+}
